@@ -4,7 +4,7 @@ class OMHFile {
     this.header = null;
     this.load();
   }
-  
+
   load(data) {
   data = typeof data == 'object' && Array.isArray(data) ? data : this.data;
   this.data = data;
@@ -12,7 +12,7 @@ class OMHFile {
     //console.log(name + ' ('+dataview.byteLength+' o)');
     //console.log(dataview.getUint32(0, true)+' m');
     //console.log(dataview.getUint16(4, true)+' s');
-    this.data = 
+    this.data =
     {
       'nDistance':dataview.getUint32(0, true),        // In meters.
       'nTime':dataview.getUint16(4, true),            // In seconds.
@@ -63,7 +63,7 @@ class OMDFile {
     this.header = null;
     this.load();
   }
-  
+
   load(data) {
     data = typeof data == 'object' && Array.isArray(data) ? data : this.data;
     this.data = data;
@@ -82,8 +82,6 @@ class OMDFile {
     }
     this.data = tmp_data;
   }
-  
-  
 
   loadGPSRec(dataview, idx) {
     return {
@@ -172,12 +170,12 @@ class OMXParser {
     if (ret) this.decode();
     return ret;
   }
-  
+
   decode() {
     this.points = [];
     this.start = new Date();
     if (this.header && typeof this.header == 'object') {
-      this.start = new Date(this.header.nYear+2000, this.header.nMonth, this.header.nDay, this.header.nHours, this.header.nMinutes, 0);
+      this.start = new Date(this.header.nYear + 2000, this.header.nMonth - 1, this.header.nDay, this.header.nHours, this.header.nMinutes, 0);
     }
     if (this.data && Array.isArray(this.data)) {
       this.points = this.data.filter(e => e.nType == 0xF1).map(e => ({
