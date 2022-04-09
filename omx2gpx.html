@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="omx2gpx.js"></script>
+<style>
+#dropbox {
+  border: 1px dashed brown;
+  border-width: thin;
+  background-color: #dfffa0;
+  text-align: center;
+  height : 180px;
+  width:500px;
+  display: table-cell;
+  vertical-align: middle;
+}
+#message {
+  width: 500px;
+  min-height: 240px;
+  max-height: 320px;
+  overflow-y: scroll;
+  border: solid 1px black;
+}
+</style>
+<script>
+function d2h(d,l) {
+  l = typeof l == 'number'?l:8;
+  if (d < 0) {
+    let a = '0x';
+    for (let i=0; i<l; i++) {
+      a += 'F';
+    }
+    d = parseInt(a, 16) + d + 1;
+  }
+  var s = (+d).toString(16).toUpperCase();
+  return s.padStart(l, '0');
+}
+function d2a(d) {
+  //return (d >= 32 && d <= 127)?String.fromCharCode(d):'.';
+  return (d >= 32 && d <= 127)?'&#'+d+';':'.';
+}
+function loadfile(file, name) {
+  name = typeof name === 'string' && name.length > 0 ? name.split('\\').pop() : "unknown";
+  const reader = new FileReader();
+  reader.addEventListener('load', (event) => {
+    let filesize = 0;
+    try {
+      let data = reader.result;
+      //let array = new Uint8Array(data);
+      if (!omxparser.addData(data)) {
+        printLine('fichier '+name+' non reconnu');
+      } else {
+        printLine('fichier '+name+' chargé avec succès');
+      }
+      btndl.style.display = omxparser.containspoints ? 'initial':'none';
+    } catch(e) {
+      console.log(e);
+    }
+  });
+  reader.readAsArrayBuffer(file);
+  fileselector.value = '';
+}
+function print(msg, color) {
+  msg = msg ?? '';
+  msg = msg.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  if (typeof color == 'string') msg = '<span style="background-color:'+color+'">'+msg+'<span>';
+  message.innerHTML += msg;
+}
+function printLine(msg, color) {
+  msg = msg ?? '';
+  print(msg+'\n', color);
+}
+function dragenter(e) {
+  e.stopPropagation();
+  e.preventDefault();
+  e.srcElement.style.backgroundColor = '#a0ffdf';
+}
+function dragleave(e) {
+  e.srcElement.style.backgroundColor = '#dfffa0';
+}
+function dragover(e) {
+  e.stopPropagation();
+  e.preventDefault();
+}
+function drop(e) {
+  e.stopPropagation();
+  e.preventDefault();
+  e.srcElement.style.backgroundColor = '#dfffa0';
+
+  let dt = e.dataTransfer;
+  let files = dt.files;
+
+  for (let i=0; i<files.length; i++) {
+    loadfile(files[i], files[i].name);
+  }
+  fileselector.value = '';
+}
+function selectFile() {
+  const event = new MouseEvent('click', {
+    view: window,
+    bubbles: true,
+    cancelable: true
+  });
+  fileselector.dispatchEvent(event);
+}
+function download() {
+  if (!omxparser.valid && !confirm('Le fichier .omh ne semble pas avoir été traité, le fichier GPX aura donc des dates invalides. Voulez-vous continuer?')) {
+    return;
+  }
+  const blob = new Blob([omxparser.toGPX()], {type: 'application/gpx+xml'});
+  if(window.navigator.msSaveOrOpenBlob) {
+    window.navigator.msSaveBlob(blob, "file.gpx");
+  }
+  else{
+    const elem = window.document.createElement('a');
+    elem.href = window.URL.createObjectURL(blob);
+    elem.download = "file.gpx";        
+    document.body.appendChild(elem);
+    elem.click();        
+    document.body.removeChild(elem);
+  }
+}
+window.onload = function() {
+  window.omxparser = new OMXParser();
+  window.message = document.getElementById("message");
+  window.fileselector = document.getElementById('file-selector');
+  window.filelist = document.getElementById("filelist");
+  window.dropbox = document.getElementById("dropbox");
+  window.btndl = document.getElementById("btndl");
+
+  dropbox.addEventListener("dragenter", dragenter, false);
+  dropbox.addEventListener("dragleave", dragleave, false);
+  dropbox.addEventListener("dragover", dragover, false);
+  dropbox.addEventListener("drop", drop, false);
+  fileselector.addEventListener('change', (event) => {
+    const files = event.target.files;
+    if (files.length <= 0) return;
+    for (let i=0; i<files.length; i++) {
+      loadfile(files.item(i), files.item(i).name);
+    }
+    fileselector.value = '';
+  });
+}
+</script>
+</head>
+<body>
+  <div class="pp_content">
+    <h3>Sélectionner un fichier :</h3>
+    <input type="file" id="file-selector">
+  </div>
+  <div id="dropbox" onclick="selectFile();">déposer un fichier ici</div>
+  <button id="btndl" onclick="download();" style="display:none;">download GPX</button>
+  <pre id="message"></pre>
+</body>
+</html>
