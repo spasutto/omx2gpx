@@ -3,8 +3,31 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
 <script src="omx2gpx.js"></script>
+<script src="map.js"></script>
 <style>
+body {
+  font-family: sans-serif;
+}
+.converter {
+  width: 500px;
+}
+.button {
+  background-color: #4CAF50; /* Green */
+  border: solid 1px white;
+  color: white;
+  padding: 10px 30px;
+  text-align: center;
+  text-decoration: none;
+  font-size: 16px;
+  border-radius: 4px;
+  background-color: #008CBA;
+}
+.button:hover {
+  border-color: #0000ff;
+}
 #dropbox {
   border: 1px dashed brown;
   border-width: thin;
@@ -14,13 +37,21 @@
   width:500px;
   display: table-cell;
   vertical-align: middle;
+  cursor:pointer;
+}
+#dropbox:hover {
+  text-decoration: underline;
 }
 #message {
-  width: 500px;
-  min-height: 240px;
-  max-height: 320px;
+  width: 100%;
+  height: 100px;
   overflow-y: scroll;
   border: solid 1px black;
+}
+#map {
+  width:100%;
+  height: 480px;
+  overflow: hidden;
 }
 </style>
 <script>
@@ -37,11 +68,10 @@ function d2h(d,l) {
   return s.padStart(l, '0');
 }
 function d2a(d) {
-  //return (d >= 32 && d <= 127)?String.fromCharCode(d):'.';
   return (d >= 32 && d <= 127)?'&#'+d+';':'.';
 }
 function loadfile(file, name) {
-  name = typeof name === 'string' && name.length > 0 ? name.split('\\').pop() : "unknown";
+  window.filename = typeof name === 'string' && name.length > 0 ? name.split('\\').pop() : "unknown";
   const reader = new FileReader();
   reader.addEventListener('load', (event) => {
     let filesize = 0;
@@ -49,13 +79,36 @@ function loadfile(file, name) {
       let data = reader.result;
       //let array = new Uint8Array(data);
       if (!omxparser.addData(data)) {
-        printLine('fichier '+name+' non reconnu');
+        printLine('Unknown file '+filename);
       } else {
-        printLine('fichier '+name+' chargé avec succès');
+        printLine('Successfully loaded '+filename);
       }
       btndl.style.display = omxparser.containspoints ? 'initial':'none';
+      if (omxparser.containspoints) {
+        llobjs.forEach(o => {
+          map.removeLayer(o);
+        });
+        llobjs = [];
+        let trackpoints = omxparser.points.map(p => new L.LatLng(p.lat, p.lon));
+        let track = new L.Polyline(trackpoints, {  color: 'blue',  weight: 1.5,  opacity: 1,  smoothFactor: 1  }).addTo(map);
+        map.fitBounds(track.getBounds());
+        llobjs.push(track);
+        let track_marker = L.marker(trackpoints[0], {icon: startIcon});
+        track_marker.bindTooltip("Start");
+        track_marker.addTo(map);
+        llobjs.push(track_marker);
+        track_marker = L.marker(trackpoints.pop(), {icon: finishIcon});
+        track_marker.bindTooltip("Finish");
+        track_marker.addTo(map);
+        llobjs.push(track_marker);
+        document.getElementById('btnDlTrace').style.display = 'block';
+      }
     } catch(e) {
       console.log(e);
+    }
+    let idx = window.filename.lastIndexOf('.');
+    if (idx > -1) {
+      window.filename = window.filename.substring(0, idx);
     }
   });
   reader.readAsArrayBuffer(file);
@@ -105,29 +158,32 @@ function selectFile() {
   fileselector.dispatchEvent(event);
 }
 function download() {
-  if (!omxparser.valid && !confirm('Le fichier .omh ne semble pas avoir été traité, le fichier GPX aura donc des dates invalides. Voulez-vous continuer?')) {
+  if (!omxparser.valid && !confirm('You didn\'t provide the associated .OMH file ; GPX file will have incorrect date. Do you want to continue?')) {
     return;
   }
   const blob = new Blob([omxparser.toGPX()], {type: 'application/gpx+xml'});
+  const filename = (typeof window.filename == "string" && window.filename.length > 0 ? window.filename : "file") + ".gpx";
   if(window.navigator.msSaveOrOpenBlob) {
-    window.navigator.msSaveBlob(blob, "file.gpx");
+    window.navigator.msSaveBlob(blob, filename);
   }
   else{
     const elem = window.document.createElement('a');
     elem.href = window.URL.createObjectURL(blob);
-    elem.download = "file.gpx";        
+    elem.download = filename;
     document.body.appendChild(elem);
-    elem.click();        
+    elem.click();
     document.body.removeChild(elem);
   }
 }
 window.onload = function() {
+  window.map = loadMap();
   window.omxparser = new OMXParser();
   window.message = document.getElementById("message");
   window.fileselector = document.getElementById('file-selector');
   window.filelist = document.getElementById("filelist");
   window.dropbox = document.getElementById("dropbox");
   window.btndl = document.getElementById("btndl");
+  window.llobjs = [];
 
   dropbox.addEventListener("dragenter", dragenter, false);
   dropbox.addEventListener("dragleave", dragleave, false);
@@ -145,12 +201,12 @@ window.onload = function() {
 </script>
 </head>
 <body>
-  <div class="pp_content">
-    <h3>Sélectionner un fichier :</h3>
-    <input type="file" id="file-selector">
+  <div class="converter">
+    <h3>OnMove 200 GPX Converter<button id="btndl" class="button" onclick="download();" style="display:none;float:right;">download GPX</button></h3>
+    <input type="file" id="file-selector" style="display:none;">
+    <div id="dropbox" onclick="selectFile();">drop .OMH/.OMD files here<BR>or click to select</div>
+    <pre id="message"></pre>
+    <div id="map"></div>
   </div>
-  <div id="dropbox" onclick="selectFile();">déposer un fichier ici</div>
-  <button id="btndl" onclick="download();" style="display:none;">download GPX</button>
-  <pre id="message"></pre>
 </body>
 </html>
