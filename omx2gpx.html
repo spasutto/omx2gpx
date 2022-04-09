@@ -203,6 +203,7 @@ window.onload = function() {
 <body>
   <div class="converter">
     <h3>OnMove 200 GPX Converter<button id="btndl" class="button" onclick="download();" style="display:none;float:right;">download GPX</button></h3>
+    <a href="https://s3-eu-west-1.amazonaws.com/ephemeris/epo.7" onclick="alert('Put the epo.7 file at the root of watch disk share');">Update ephemeris</a>
     <input type="file" id="file-selector" style="display:none;">
     <div id="dropbox" onclick="selectFile();">drop .OMH/.OMD files here<BR>or click to select</div>
     <pre id="message"></pre>
