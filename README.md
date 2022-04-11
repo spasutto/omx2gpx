@@ -4,7 +4,7 @@ Online tool for converting track files produced by Geonaute/Decathlon ONmove 200
 Technical informations found in the work of [Clement CORDE](https://sourceforge.net/projects/omx2gpx/)
 
 ## Try
-Live demo running [here](https://spasutto.github.io/omx2gpx/omx2gpx.html).
+Live demo running [here](https://spasutto.github.io/omx2gpx/omx2gpx.html). Examples files in [examples folder](https://github.com/spasutto/omx2gpx/tree/main/examples)
 
 ## Usage
 

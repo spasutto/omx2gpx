@@ -55,21 +55,6 @@ body {
 }
 </style>
 <script>
-function d2h(d,l) {
-  l = typeof l == 'number'?l:8;
-  if (d < 0) {
-    let a = '0x';
-    for (let i=0; i<l; i++) {
-      a += 'F';
-    }
-    d = parseInt(a, 16) + d + 1;
-  }
-  var s = (+d).toString(16).toUpperCase();
-  return s.padStart(l, '0');
-}
-function d2a(d) {
-  return (d >= 32 && d <= 127)?'&#'+d+';':'.';
-}
 function loadfile(file, name) {
   name = typeof name === 'string' && name.length > 0 ? name.split('\\').pop() : "unknown";
   const reader = new FileReader();

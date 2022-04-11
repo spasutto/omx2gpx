@@ -178,10 +178,10 @@ class OMXParser {
       this.start = new Date(this.header.nYear + 2000, this.header.nMonth - 1, this.header.nDay, this.header.nHours, this.header.nMinutes, 0);
     }
     if (this.data && Array.isArray(this.data)) {
-      this.points = this.data.filter(e => e.nType == 0xF1).map(e => ({
-        'lat':e.nLatitude/1000000,
-        'lon':e.nLongitude/1000000,
-        'time':new Date(this.start.getTime() + e.nTime)
+      this.points = this.data.filter(e => e.nType == 0xF1)./*sort((a, b) => a.nTime - b.nTime).*/map(e => ({
+        'lat': e.nLatitude / 1000000,
+        'lon': e.nLongitude / 1000000,
+        'time': new Date(this.start.getTime() + e.nTime * 1000)
       }));
     }
   }
