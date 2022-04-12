@@ -176,6 +176,9 @@ class OMXParser {
     this.start = new Date();
     if (this.header && typeof this.header == 'object') {
       this.start = new Date(this.header.nYear + 2000, this.header.nMonth - 1, this.header.nDay, this.header.nHours, this.header.nMinutes, 0);
+      // correction de la date ; la ONmove 200 rajoute le décalage lié à la zone au temps déjà local soit décalage de 1 ou 2h en fonction de la saison
+      // Exemple : 10h UTC ==> 12h00 locale ==> 14h00 enregistrée dans la montre
+      this.start = new Date(this.start.getTime() + this.start.getTimezoneOffset() * 60 * 1000);
     }
     if (this.data && Array.isArray(this.data)) {
       this.points = this.data.filter(e => e.nType == 0xF1)./*sort((a, b) => a.nTime - b.nTime).*/map(e => ({
